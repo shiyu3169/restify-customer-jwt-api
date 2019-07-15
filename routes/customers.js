@@ -72,4 +72,16 @@ module.exports = server => {
       );
     }
   });
+
+  // Delete Customer
+  server.del('/customers/:id', async (req, res, next) => {
+    try {
+      await Customer.findOneAndRemove({ _id: req.params.id });
+      res.send(204);
+    } catch (err) {
+      new errors.ResourceNotFoundError(
+        `There is not customer with the id of ${req.params.id}`
+      );
+    }
+  });
 };
