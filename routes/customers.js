@@ -10,6 +10,21 @@ module.exports = server => {
       res.send(customers);
       next();
     } catch (err) {
+      return next(
+        new errors.ResourceNotFoundError(
+          `There is not customer with the id of ${req.params.id}`
+        )
+      );
+    }
+  });
+
+  // Get Single Customer
+  server.get('/customers/:id', async (req, res, next) => {
+    try {
+      const customers = await Customer.findById(req.params.id);
+      res.send(customers);
+      next();
+    } catch (err) {
       return next(new errors.InvalidContentError(err));
     }
   });
@@ -30,11 +45,31 @@ module.exports = server => {
     });
 
     try {
-      const newCustomer = await customer.save();
+      await customer.save();
       res.send(201);
       next();
     } catch (err) {
       return next(new errors.InternalError(err.message));
+    }
+  });
+
+  // Update Customer
+  server.put('/customers/:id', async (req, res, next) => {
+    // Check for JSON
+    if (!req.is('application/json')) {
+      return next(new errors.InvalidContentError("Expects 'application/json'"));
+    }
+
+    try {
+      await Customer.findOneAndUpdate({ _id: req.params.id }, req.body);
+      res.send(200);
+      next();
+    } catch (err) {
+      return next(
+        new errors.ResourceNotFoundError(
+          `There is not customer with the id of ${req.params.id}`
+        )
+      );
     }
   });
 };
