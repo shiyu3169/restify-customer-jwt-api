@@ -1,6 +1,9 @@
 const errors = require('restify-errors');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const auth = require('../auth');
+const config = require('../config');
+const jwt = require('jsonwebtoken');
 
 module.exports = server => {
   // Register User
@@ -21,9 +24,32 @@ module.exports = server => {
           await user.save();
           res.send(201);
         } catch (err) {
-          return next(new errors.InternalError(err.message));
+          return next(new errors.InternalError(err));
         }
       });
     });
+  });
+
+  // Auth User
+  server.post('/auth', async (req, res, next) => {
+    const { email, password } = req.body;
+    try {
+      // Authenticate user
+      const user = await auth.authenticate(email, password);
+
+      // Create JWT
+      const token = jwt.sign(user.toJSON(), config.JWT_SECRET, {
+        expiresIn: '15m'
+      });
+
+      const { iat, exp } = jwt.decode(token);
+      // Respond with token
+      res.send({ iat, exp, token });
+
+      next();
+    } catch (err) {
+      // User unauthorized
+      return next(new errors.UnauthorizedError(err));
+    }
   });
 };
